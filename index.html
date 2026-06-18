@@ -207,6 +207,7 @@
 <h1>💎 젬 매치</h1>
 <div class="info">
   <div class="info-item">점수: <span id="score">0</span></div>
+  <div class="info-item">🏆 <span id="best">0</span></div>
   <div class="info-item">🪙 <span id="coins">0</span></div>
   <div class="info-item">이동: <span id="moves">30</span></div>
   <div class="info-item">💡 <span id="hints">3</span></div>
@@ -250,11 +251,11 @@
 <script>
 const GEMS = ['💎','🔥','⭐','🍀','💜','🧊'];
 const ROWS = 8, COLS = 8;
-let board = [], selected = null, score = 0, moves = 30, hints = 3, coins = 0, busy = false;
+let board = [], selected = null, score = 0, moves = 30, hints = 3, coins = 0, bestScore = 0, busy = false;
 
 // 저장/불러오기
 function saveData() {
-  localStorage.setItem('gemMatch', JSON.stringify({ score, coins, hints, moves, board }));
+  localStorage.setItem('gemMatch', JSON.stringify({ score, coins, hints, moves, board, bestScore }));
 }
 
 function loadData() {
@@ -266,6 +267,7 @@ function loadData() {
     coins = s.coins || 0;
     hints = s.hints ?? 3;
     moves = s.moves ?? 30;
+    bestScore = s.bestScore || 0;
     board = s.board || [];
     if (!board.length) return false;
     return true;
@@ -274,6 +276,7 @@ function loadData() {
 
 function updateUI() {
   document.getElementById('score').textContent = score;
+  document.getElementById('best').textContent = bestScore;
   document.getElementById('coins').textContent = coins;
   document.getElementById('moves').textContent = moves;
   document.getElementById('hints').textContent = hints;
@@ -345,6 +348,8 @@ async function doSwap(r1,c1,r2,c2) {
   saveData();
   busy = false;
   if (moves <= 0) {
+    if (score > bestScore) bestScore = score;
+    saveData();
     document.getElementById('msg').textContent = `🏁 게임 종료! 최종 점수: ${score}`;
   }
 }
@@ -360,6 +365,7 @@ async function resolveMatches() {
     const gained = matches.length * 2; // 코인 2개씩
     score += pts;
     coins += gained;
+    if (score > bestScore) bestScore = score;
     updateUI();
     await animateMatches(matches);
     removeMatches(matches);
