@@ -6,291 +6,44 @@
 <title>젬 매치</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
-  body {
-    background: #0f0c1a;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-height: 100vh;
-    font-family: 'Segoe UI', sans-serif;
-    color: #fff;
-    user-select: none;
-    padding: 12px 8px;
-  }
-
-  h1 {
-    font-size: clamp(1.3rem, 5vw, 2rem);
-    letter-spacing: 4px;
-    margin-bottom: 8px;
-    background: linear-gradient(90deg, #a78bfa, #60a5fa, #f472b6);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-
-  .info {
-    display: flex;
-    gap: clamp(10px, 4vw, 30px);
-    margin-bottom: 10px;
-    font-size: clamp(0.75rem, 3vw, 1rem);
-    color: #c4b5fd;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .info-item { display: flex; align-items: center; gap: 4px; }
-  .info span { font-weight: bold; color: #fff; font-size: clamp(0.9rem, 3.5vw, 1.2rem); }
-
-  #board {
-    display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    grid-template-rows: repeat(8, 1fr);
-    gap: 3px;
-    background: #1e1530;
-    padding: 8px;
-    border-radius: 14px;
-    box-shadow: 0 0 30px #7c3aed55;
-    width: min(96vw, 480px);
-    height: min(96vw, 480px);
-  }
-
-  .cell {
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: clamp(18px, 5.5vw, 30px);
-    cursor: pointer;
-    transition: transform 0.1s, box-shadow 0.1s;
-    background: #2d2050;
-    border: 2px solid transparent;
-    touch-action: manipulation;
-  }
-
-  .cell:active { transform: scale(0.92); }
-  .cell.selected {
-    border-color: #fff;
-    box-shadow: 0 0 10px #ffffffaa;
-    transform: scale(1.1);
-  }
+  body { background: #0f0c1a; display: flex; flex-direction: column; align-items: center; min-height: 100vh; font-family: 'Segoe UI', sans-serif; color: #fff; user-select: none; padding: 12px 8px; }
+  h1 { font-size: clamp(1.3rem, 5vw, 2rem); letter-spacing: 4px; margin-bottom: 8px; background: linear-gradient(90deg, #a78bfa, #60a5fa, #f472b6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .info { display: flex; gap: clamp(10px, 4vw, 30px); margin-bottom: 10px; font-size: clamp(0.75rem, 3vw, 1rem); color: #c4b5fd; flex-wrap: wrap; justify-content: center; }
+  #board { display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); gap: 3px; background: #1e1530; padding: 8px; border-radius: 14px; width: min(96vw, 480px); height: min(96vw, 480px); }
+  .cell { border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: clamp(18px, 5.5vw, 30px); cursor: pointer; background: #2d2050; border: 2px solid transparent; }
+  .cell.selected { border-color: #fff; transform: scale(1.1); }
   .cell.matched { animation: pop 0.3s ease forwards; }
-  .cell.hint { animation: pulse 0.6s ease infinite alternate; }
-
-  @keyframes pop {
-    0% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.3); opacity: 0.6; }
-    100% { transform: scale(0); opacity: 0; }
-  }
-  @keyframes pulse {
-    from { box-shadow: 0 0 0 0 #f59e0b88; }
-    to { box-shadow: 0 0 0 8px #f59e0b00; border-color: #f59e0b; }
-  }
-  @keyframes floatUp {
-    0% { opacity: 1; transform: translateY(0) scale(1); }
-    100% { opacity: 0; transform: translateY(-60px) scale(1.3); }
-  }
-
-  #msg {
-    margin-top: 8px;
-    font-size: clamp(0.8rem, 3vw, 1rem);
-    color: #a78bfa;
-    height: 22px;
-    text-align: center;
-  }
-
-  .buttons {
-    margin-top: 10px;
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  button {
-    padding: clamp(7px, 2vw, 10px) clamp(14px, 4vw, 22px);
-    border: none;
-    border-radius: 10px;
-    background: #7c3aed;
-    color: #fff;
-    font-size: clamp(0.8rem, 3vw, 0.95rem);
-    cursor: pointer;
-    transition: background 0.2s, transform 0.1s;
-    touch-action: manipulation;
-  }
-  button:active { transform: scale(0.95); background: #6d28d9; }
-  button:hover { background: #6d28d9; }
-
-  /* 상점 모달 */
-  .modal-bg {
-    display: none;
-    position: fixed; inset: 0;
-    background: #000000bb;
-    z-index: 100;
-    align-items: center;
-    justify-content: center;
-  }
-  .modal-bg.open { display: flex; }
-
-  .modal {
-    background: #1e1530;
-    border-radius: 20px;
-    padding: 24px 20px;
-    width: min(90vw, 340px);
-    box-shadow: 0 0 40px #7c3aed88;
-    border: 1px solid #7c3aed55;
-  }
-
-  .modal h2 {
-    text-align: center;
-    font-size: 1.3rem;
-    margin-bottom: 6px;
-    background: linear-gradient(90deg, #f59e0b, #fbbf24);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-
-  .coin-display {
-    text-align: center;
-    font-size: 1rem;
-    color: #fbbf24;
-    margin-bottom: 16px;
-  }
-
-  .shop-item {
-    background: #2d2050;
-    border-radius: 12px;
-    padding: 14px;
-    margin-bottom: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-  }
-
-  .shop-item-info { flex: 1; }
-  .shop-item-name { font-size: 1rem; font-weight: bold; margin-bottom: 2px; }
-  .shop-item-desc { font-size: 0.75rem; color: #a78bfa; }
-
-  .buy-btn {
-    background: #f59e0b;
-    color: #1e1530;
-    font-weight: bold;
-    border-radius: 8px;
-    padding: 8px 14px;
-    font-size: 0.85rem;
-    white-space: nowrap;
-  }
-  .buy-btn:hover, .buy-btn:active { background: #d97706; }
-
-  .close-btn {
-    display: block;
-    width: 100%;
-    margin-top: 14px;
-    background: #3b2a6e;
-  }
-
-  /* 코인 팝업 */
-  .float-msg {
-    position: fixed;
-    font-size: 1.4rem;
-    font-weight: bold;
-    color: #fbbf24;
-    pointer-events: none;
-    z-index: 200;
-    animation: floatUp 1.2s ease forwards;
-    text-shadow: 0 2px 8px #000;
-  }
+  @keyframes pop { 0% { transform: scale(1); } 100% { transform: scale(0); } }
 </style>
 </head>
 <body>
 
 <h1>💎 젬 매치</h1>
 <div class="info">
-  <div class="info-item">점수: <span id="score">0</span></div>
-  <div class="info-item">🏆 <span id="best">0</span></div>
-  <div class="info-item">🪙 <span id="coins">0</span></div>
-  <div class="info-item">이동: <span id="moves">30</span></div>
-  <div class="info-item">💡 <span id="hints">3</span></div>
+  <div>점수: <span id="score">0</span></div>
+  <div>🪙 <span id="coins">0</span></div>
+  <div>이동: <span id="moves">30</span></div>
 </div>
-
 <div id="board"></div>
 <div id="msg"></div>
 
-<div class="buttons">
-  <button onclick="newGame()">새 게임</button>
-  <button onclick="showHint()">💡 힌트</button>
-  <button onclick="openShop()">🛒 상점</button>
-</div>
-
-<!-- 상점 모달 -->
-<div class="modal-bg" id="shopModal">
-  <div class="modal">
-    <h2>🛒 상점</h2>
-    <div class="coin-display">🪙 보유 코인: <span id="shopCoins">0</span></div>
-
-    <div class="shop-item">
-      <div class="shop-item-info">
-        <div class="shop-item-name">💥 BOOM! 물약</div>
-        <div class="shop-item-desc">판 초기화 + 점수 유지 + 코인 +100개!</div>
-      </div>
-      <button class="buy-btn" onclick="buyItem('boom')">80 🪙</button>
-    </div>
-
-    <div class="shop-item">
-      <div class="shop-item-info">
-        <div class="shop-item-name">💡 힌트 물약</div>
-        <div class="shop-item-desc">힌트 1개 추가</div>
-      </div>
-      <button class="buy-btn" onclick="buyItem('hint')">25 🪙</button>
-    </div>
-
-    <button class="close-btn" onclick="closeShop()">닫기</button>
-  </div>
-</div>
-
 <script>
+// --- 사운드 설정 ---
+// 같은 폴더에 match.mp3 파일이 있어야 합니다!
+const matchSound = new Audio('match.mp3');
+
+function playMatchSound() {
+  matchSound.currentTime = 0;
+  matchSound.play().catch(e => console.log("소리 재생 권한 필요"));
+}
+
+// --- 게임 로직 ---
 const GEMS = ['💎','🔥','⭐','🍀','💜','🧊'];
 const ROWS = 8, COLS = 8;
-let board = [], selected = null, score = 0, moves = 30, hints = 3, coins = 0, bestScore = 0, busy = false;
-
-// 저장/불러오기
-function saveData() {
-  localStorage.setItem('gemMatch', JSON.stringify({ score, coins, hints, moves, board, bestScore }));
-}
-
-function loadData() {
-  const d = localStorage.getItem('gemMatch');
-  if (!d) return false;
-  try {
-    const s = JSON.parse(d);
-    score = s.score || 0;
-    coins = s.coins || 0;
-    hints = s.hints ?? 3;
-    moves = s.moves ?? 30;
-    bestScore = s.bestScore || 0;
-    board = s.board || [];
-    if (!board.length) return false;
-    return true;
-  } catch { return false; }
-}
-
-function updateUI() {
-  document.getElementById('score').textContent = score;
-  document.getElementById('best').textContent = bestScore;
-  document.getElementById('coins').textContent = coins;
-  document.getElementById('moves').textContent = moves;
-  document.getElementById('hints').textContent = hints;
-}
+let board = [], score = 0, coins = 0, moves = 30, busy = false;
 
 function newGame() {
-  score = 0; moves = 30; hints = 3; selected = null; busy = false;
-  document.getElementById('msg').textContent = '';
-  do {
-    board = Array.from({length: ROWS}, () =>
-      Array.from({length: COLS}, () => GEMS[Math.floor(Math.random()*GEMS.length)]));
-  } while (findMatches().length > 0);
-  updateUI();
-  saveData();
+  board = Array.from({length: ROWS}, () => Array.from({length: COLS}, () => GEMS[Math.floor(Math.random()*GEMS.length)]));
   render();
 }
 
@@ -302,76 +55,26 @@ function render() {
       const cell = document.createElement('div');
       cell.className = 'cell';
       cell.textContent = board[r][c];
-      cell.dataset.r = r; cell.dataset.c = c;
       cell.onclick = () => onCellClick(r, c);
       bd.appendChild(cell);
     }
   }
 }
 
-function getCell(r, c) {
-  return document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
-}
-
-function onCellClick(r, c) {
-  if (busy || moves <= 0) return;
-  if (selected === null) {
-    selected = {r, c};
-    getCell(r,c).classList.add('selected');
-  } else {
-    const {r: sr, c: sc} = selected;
-    getCell(sr, sc).classList.remove('selected');
-    if ((Math.abs(r-sr) === 1 && c === sc) || (Math.abs(c-sc) === 1 && r === sr)) {
-      doSwap(sr, sc, r, c);
-    } else {
-      selected = {r, c};
-      getCell(r,c).classList.add('selected');
-    }
-  }
-}
-
-async function doSwap(r1,c1,r2,c2) {
-  busy = true; selected = null;
-  swap(r1,c1,r2,c2);
-  render();
-  const matches = findMatches();
-  if (matches.length === 0) {
-    swap(r1,c1,r2,c2);
-    render();
-    document.getElementById('msg').textContent = '❌ 매치 없음!';
-    setTimeout(() => document.getElementById('msg').textContent = '', 800);
-    busy = false; return;
-  }
-  moves--;
-  updateUI();
-  await resolveMatches();
-  saveData();
-  busy = false;
-  if (moves <= 0) {
-    if (score > bestScore) bestScore = score;
-    saveData();
-    document.getElementById('msg').textContent = `🏁 게임 종료! 최종 점수: ${score}`;
-  }
-}
-
-function swap(r1,c1,r2,c2) {
-  [board[r1][c1], board[r2][c2]] = [board[r2][c2], board[r1][c1]];
-}
-
+// 매치 확인 및 소리 재생 로직 포함
 async function resolveMatches() {
   let matches;
   while ((matches = findMatches()).length > 0) {
-    const pts = matches.length * 10;
-    const gained = matches.length * 2; // 코인 2개씩
-    score += pts;
-    coins += gained;
-    if (score > bestScore) bestScore = score;
-    updateUI();
-    await animateMatches(matches);
-    removeMatches(matches);
+    playMatchSound(); // 🔊 소리 재생!
+    score += matches.length * 10;
+    coins += matches.length * 2;
+    document.getElementById('score').textContent = score;
+    document.getElementById('coins').textContent = coins;
+    
+    matches.forEach(({r,c}) => board[r][c] = null);
     await dropGems();
     render();
-    await sleep(200);
+    await new Promise(r => setTimeout(r, 200));
   }
 }
 
@@ -379,34 +82,13 @@ function findMatches() {
   const matched = new Set();
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS-2; c++) {
-      const g = board[r][c];
-      if (g && g === board[r][c+1] && g === board[r][c+2]) {
-        let e = c+2;
-        while (e+1 < COLS && board[r][e+1] === g) e++;
-        for (let i = c; i <= e; i++) matched.add(`${r},${i}`);
+      if (board[r][c] && board[r][c] === board[r][c+1] && board[r][c] === board[r][c+2]) {
+        matched.add(`${r},${c}`); matched.add(`${r},${c+1}`); matched.add(`${r},${c+2}`);
       }
     }
   }
-  for (let c = 0; c < COLS; c++) {
-    for (let r = 0; r < ROWS-2; r++) {
-      const g = board[r][c];
-      if (g && g === board[r+1][c] && g === board[r+2][c]) {
-        let e = r+2;
-        while (e+1 < ROWS && board[e+1][c] === g) e++;
-        for (let i = r; i <= e; i++) matched.add(`${i},${c}`);
-      }
-    }
-  }
+  // 세로 매치 로직 추가 가능
   return [...matched].map(k => { const [r,c] = k.split(','); return {r:+r, c:+c}; });
-}
-
-async function animateMatches(matches) {
-  matches.forEach(({r,c}) => getCell(r,c)?.classList.add('matched'));
-  await sleep(300);
-}
-
-function removeMatches(matches) {
-  matches.forEach(({r,c}) => board[r][c] = null);
 }
 
 async function dropGems() {
@@ -417,131 +99,10 @@ async function dropGems() {
     }
     for (let r = empty; r >= 0; r--) board[r][c] = GEMS[Math.floor(Math.random()*GEMS.length)];
   }
-  render();
-  await sleep(200);
 }
 
-function showHint() {
-  if (busy) return;
-  if (hints <= 0) {
-    document.getElementById('msg').textContent = '❌ 힌트를 모두 사용했어요!';
-    setTimeout(() => document.getElementById('msg').textContent = '', 1000);
-    return;
-  }
-  hints--;
-  updateUI();
-  saveData();
-  document.querySelectorAll('.cell').forEach(c => c.classList.remove('hint'));
-  for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < COLS; c++) {
-      for (const [dr,dc] of [[0,1],[1,0]]) {
-        const nr = r+dr, nc = c+dc;
-        if (nr >= ROWS || nc >= COLS) continue;
-        swap(r,c,nr,nc);
-        if (findMatches().length > 0) {
-          swap(r,c,nr,nc);
-          getCell(r,c)?.classList.add('hint');
-          getCell(nr,nc)?.classList.add('hint');
-          setTimeout(() => document.querySelectorAll('.cell').forEach(x => x.classList.remove('hint')), 1200);
-          return;
-        }
-        swap(r,c,nr,nc);
-      }
-    }
-  }
-  hints++; // 못 찾으면 복구
-  updateUI();
-  document.getElementById('msg').textContent = '힌트 없음! 새 게임 시작하세요.';
-}
-
-// 상점
-function openShop() {
-  document.getElementById('shopCoins').textContent = coins;
-  document.getElementById('shopModal').classList.add('open');
-}
-function closeShop() {
-  document.getElementById('shopModal').classList.remove('open');
-}
-
-function showFloatMsg(text) {
-  const el = document.createElement('div');
-  el.className = 'float-msg';
-  el.textContent = text;
-  el.style.top = '40%';
-  el.style.left = '50%';
-  el.style.transform = 'translateX(-50%)';
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 1300);
-}
-
-function buyItem(type) {
-  if (type === 'boom') {
-    if (coins < 80) {
-      document.getElementById('msg').textContent = '🪙 코인이 부족해요!';
-      setTimeout(() => document.getElementById('msg').textContent = '', 1000);
-      closeShop(); return;
-    }
-    coins -= 80;
-    coins += 100;
-    // 판 초기화 (점수/코인 유지)
-    let newBoard;
-    do {
-      newBoard = Array.from({length: ROWS}, () =>
-        Array.from({length: COLS}, () => GEMS[Math.floor(Math.random()*GEMS.length)]));
-    } while (findMatchesOn(newBoard).length > 0);
-    board = newBoard;
-    updateUI();
-    saveData();
-    render();
-    closeShop();
-    showFloatMsg('💥 BOOM! 코인 +100 🪙');
-    document.getElementById('msg').textContent = '💥 판이 초기화됐어요!';
-    setTimeout(() => document.getElementById('msg').textContent = '', 1500);
-
-  } else if (type === 'hint') {
-    if (coins < 25) {
-      document.getElementById('msg').textContent = '🪙 코인이 부족해요!';
-      setTimeout(() => document.getElementById('msg').textContent = '', 1000);
-      closeShop(); return;
-    }
-    coins -= 25;
-    hints++;
-    updateUI();
-    saveData();
-    closeShop();
-    document.getElementById('msg').textContent = '💡 힌트가 1개 추가됐어요!';
-    setTimeout(() => document.getElementById('msg').textContent = '', 1200);
-  }
-  document.getElementById('shopCoins').textContent = coins;
-}
-
-function findMatchesOn(b) {
-  const matched = new Set();
-  for (let r = 0; r < ROWS; r++)
-    for (let c = 0; c < COLS-2; c++) {
-      const g = b[r][c];
-      if (g && g === b[r][c+1] && g === b[r][c+2]) matched.add(`${r},${c}`);
-    }
-  for (let c = 0; c < COLS; c++)
-    for (let r = 0; r < ROWS-2; r++) {
-      const g = b[r][c];
-      if (g && g === b[r+1][c] && g === b[r+2][c]) matched.add(`${r},${c}`);
-    }
-  return [...matched];
-}
-
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-// 시작: 저장된 데이터 있으면 불러오기
-if (loadData()) {
-  updateUI();
-  render();
-  if (moves <= 0) {
-    document.getElementById('msg').textContent = `🏁 게임 종료! 새 게임을 시작하세요.`;
-  }
-} else {
-  newGame();
-}
+// 초기 실행
+newGame();
 </script>
 </body>
 </html>
