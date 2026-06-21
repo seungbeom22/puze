@@ -382,9 +382,9 @@ async function resolveMatches() {
     const pts = matches.length * 10;
     const gained = matches.length * 2; // 코인 2개씩
     score += pts;
-    playSound('rescopicsound-elemental-magic-spell-impact-outgoing-228342.mp3');
+    setTimeout(() => playSound('rescopicsound-elemental-magic-spell-impact-outgoing-228342.mp3'), 50);
     if (comboCount >= 2) {
-      playSound('brvhrtz-stab-f-01-brvhrtz-224599.mp3');
+      setTimeout(() => playSound('brvhrtz-stab-f-01-brvhrtz-224599.mp3'), 300);
     }
     coins += gained;
     if (score > bestScore) bestScore = score;
