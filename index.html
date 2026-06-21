@@ -348,7 +348,6 @@ async function doSwap(r1,c1,r2,c2) {
     busy = false; return;
   }
   moves--;
-  playSound('match.mp3');
   updateUI();
   await resolveMatches();
   saveData();
@@ -372,6 +371,7 @@ async function resolveMatches() {
     const pts = matches.length * 10;
     const gained = matches.length * 2; // 코인 2개씩
     score += pts;
+    playSound('rescopicsound-elemental-magic-spell-impact-outgoing-228342.mp3');
     if (comboCount >= 2) {
       playSound('brvhrtz-stab-f-01-brvhrtz-224599.mp3');
     }
