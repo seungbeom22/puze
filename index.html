@@ -1,108 +1,69 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>젬 매치</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  body { background: #0f0c1a; display: flex; flex-direction: column; align-items: center; min-height: 100vh; font-family: 'Segoe UI', sans-serif; color: #fff; user-select: none; padding: 12px 8px; }
-  h1 { font-size: clamp(1.3rem, 5vw, 2rem); letter-spacing: 4px; margin-bottom: 8px; background: linear-gradient(90deg, #a78bfa, #60a5fa, #f472b6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-  .info { display: flex; gap: clamp(10px, 4vw, 30px); margin-bottom: 10px; font-size: clamp(0.75rem, 3vw, 1rem); color: #c4b5fd; flex-wrap: wrap; justify-content: center; }
-  #board { display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); gap: 3px; background: #1e1530; padding: 8px; border-radius: 14px; width: min(96vw, 480px); height: min(96vw, 480px); }
-  .cell { border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: clamp(18px, 5.5vw, 30px); cursor: pointer; background: #2d2050; border: 2px solid transparent; }
-  .cell.selected { border-color: #fff; transform: scale(1.1); }
-  .cell.matched { animation: pop 0.3s ease forwards; }
-  @keyframes pop { 0% { transform: scale(1); } 100% { transform: scale(0); } }
-</style>
-</head>
-<body>
-
-<h1>💎 젬 매치</h1>
-<div class="info">
-  <div>점수: <span id="score">0</span></div>
-  <div>🪙 <span id="coins">0</span></div>
-  <div>이동: <span id="moves">30</span></div>
-</div>
-<div id="board"></div>
-<div id="msg"></div>
-
 <script>
-// --- 사운드 설정 ---
-// 같은 폴더에 match.mp3 파일이 있어야 합니다!
-const matchSound = new Audio('match.mp3');
-
-function playMatchSound() {
-  matchSound.currentTime = 0;
-  matchSound.play().catch(e => console.log("소리 재생 권한 필요"));
+// --- 핵심 수정: 점수 및 상점 데이터 초기화 로직 ---
+function saveData() {
+  const data = { score, coins, hints, moves, bestScore };
+  localStorage.setItem('gemMatch', JSON.stringify(data));
 }
 
-// --- 게임 로직 ---
-const GEMS = ['💎','🔥','⭐','🍀','💜','🧊'];
-const ROWS = 8, COLS = 8;
-let board = [], score = 0, coins = 0, moves = 30, busy = false;
+function loadData() {
+  const d = localStorage.getItem('gemMatch');
+  if (!d) return false;
+  try {
+    const s = JSON.parse(d);
+    score = s.score || 0;
+    coins = s.coins || 0;
+    hints = s.hints ?? 3;
+    moves = s.moves ?? 30;
+    bestScore = s.bestScore || 0;
+    return true;
+  } catch(e) { 
+    console.error("데이터 로드 실패:", e);
+    return false; 
+  }
+}
 
-function newGame() {
-  board = Array.from({length: ROWS}, () => Array.from({length: COLS}, () => GEMS[Math.floor(Math.random()*GEMS.length)]));
+// 상점 기능 강제 연결
+function openShop() {
+  document.getElementById('shopCoins').textContent = coins;
+  document.getElementById('shopModal').classList.add('open');
+}
+function closeShop() {
+  document.getElementById('shopModal').classList.remove('open');
+}
+
+// 점수 저장 로직 강화
+function updateScore(points) {
+  score += points;
+  if (score > bestScore) {
+    bestScore = score;
+  }
+  updateUI();
+  saveData();
+}
+
+// 상점 구매 기능 수정
+function buyItem(type) {
+  if (type === 'boom') {
+    if (coins < 80) { alert('코인이 부족해요!'); return; }
+    coins -= 80;
+    coins += 100; // 보너스
+    document.getElementById('msg').textContent = '💥 물약 사용 완료!';
+  } else if (type === 'hint') {
+    if (coins < 25) { alert('코인이 부족해요!'); return; }
+    coins -= 25;
+    hints++;
+    document.getElementById('msg').textContent = '💡 힌트 추가됨!';
+  }
+  updateUI();
+  saveData();
+  document.getElementById('shopCoins').textContent = coins;
+}
+
+// 시작 시 데이터가 깨졌으면 초기화
+if (!loadData()) {
+  newGame();
+} else {
+  updateUI();
   render();
 }
-
-function render() {
-  const bd = document.getElementById('board');
-  bd.innerHTML = '';
-  for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < COLS; c++) {
-      const cell = document.createElement('div');
-      cell.className = 'cell';
-      cell.textContent = board[r][c];
-      cell.onclick = () => onCellClick(r, c);
-      bd.appendChild(cell);
-    }
-  }
-}
-
-// 매치 확인 및 소리 재생 로직 포함
-async function resolveMatches() {
-  let matches;
-  while ((matches = findMatches()).length > 0) {
-    playMatchSound(); // 🔊 소리 재생!
-    score += matches.length * 10;
-    coins += matches.length * 2;
-    document.getElementById('score').textContent = score;
-    document.getElementById('coins').textContent = coins;
-    
-    matches.forEach(({r,c}) => board[r][c] = null);
-    await dropGems();
-    render();
-    await new Promise(r => setTimeout(r, 200));
-  }
-}
-
-function findMatches() {
-  const matched = new Set();
-  for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < COLS-2; c++) {
-      if (board[r][c] && board[r][c] === board[r][c+1] && board[r][c] === board[r][c+2]) {
-        matched.add(`${r},${c}`); matched.add(`${r},${c+1}`); matched.add(`${r},${c+2}`);
-      }
-    }
-  }
-  // 세로 매치 로직 추가 가능
-  return [...matched].map(k => { const [r,c] = k.split(','); return {r:+r, c:+c}; });
-}
-
-async function dropGems() {
-  for (let c = 0; c < COLS; c++) {
-    let empty = ROWS - 1;
-    for (let r = ROWS-1; r >= 0; r--) {
-      if (board[r][c] !== null) { board[empty][c] = board[r][c]; if (empty !== r) board[r][c] = null; empty--; }
-    }
-    for (let r = empty; r >= 0; r--) board[r][c] = GEMS[Math.floor(Math.random()*GEMS.length)];
-  }
-}
-
-// 초기 실행
-newGame();
 </script>
-</body>
-</html>
