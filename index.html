@@ -250,10 +250,20 @@
 
 <script>
 const GEMS = ['💎','🔥','⭐','🍀','💜','🧊'];
-function playSound(file) {
-  const a = new Audio(file);
-  a.volume = 0.6;
+let audioUnlocked = false;
+function unlockAudio() {
+  if (audioUnlocked) return;
+  audioUnlocked = true;
+  const a = new Audio();
   a.play().catch(()=>{});
+}
+function playSound(file) {
+  try {
+    const a = new Audio(file);
+    a.volume = 0.6;
+    const p = a.play();
+    if (p) p.catch(()=>{});
+  } catch(e) {}
 }
 const ROWS = 8, COLS = 8;
 let board = [], selected = null, score = 0, moves = 30, hints = 3, coins = 0, bestScore = 0, busy = false;
@@ -319,6 +329,7 @@ function getCell(r, c) {
 }
 
 function onCellClick(r, c) {
+  unlockAudio();
   if (busy || moves <= 0) return;
   if (selected === null) {
     selected = {r, c};
