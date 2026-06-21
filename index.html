@@ -250,10 +250,11 @@
 
 <script>
 const GEMS = ['💎','🔥','⭐','🍀','💜','🧊'];
-const sfxMatch = new Audio('match.mp3');
-const sfxCombo = new Audio('brvhrtz-stab-f-01-brvhrtz-224599.mp3');
-sfxMatch.volume = 0.6;
-sfxCombo.volume = 0.6;
+function playSound(file) {
+  const a = new Audio(file);
+  a.volume = 0.6;
+  a.play().catch(()=>{});
+}
 const ROWS = 8, COLS = 8;
 let board = [], selected = null, score = 0, moves = 30, hints = 3, coins = 0, bestScore = 0, busy = false;
 
@@ -371,9 +372,9 @@ async function resolveMatches() {
     const gained = matches.length * 2; // 코인 2개씩
     score += pts;
     if (comboCount >= 2) {
-      sfxCombo.currentTime = 0; sfxCombo.play().catch(()=>{});
+      playSound('brvhrtz-stab-f-01-brvhrtz-224599.mp3');
     } else {
-      sfxMatch.currentTime = 0; sfxMatch.play().catch(()=>{});
+      playSound('match.mp3');
     }
     coins += gained;
     if (score > bestScore) bestScore = score;
