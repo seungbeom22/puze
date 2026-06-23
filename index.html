@@ -350,7 +350,7 @@ let board = [], selected = null, score = 0, moves = 30, hints = 3, coins = 0, be
 
 // 저장/불러오기
 function saveData() {
-  localStorage.setItem('gemMatch', JSON.stringify({ score, coins, hints, moves, board, bestScore }));
+  localStorage.setItem('gemMatch', JSON.stringify({ score, coins, hints, moves, bestScore }));
 }
 
 function loadData() {
@@ -363,8 +363,6 @@ function loadData() {
     hints = s.hints ?? 3;
     moves = s.moves ?? 30;
     bestScore = s.bestScore || 0;
-    board = s.board || [];
-    if (!board.length) return false;
     return true;
   } catch { return false; }
 }
@@ -637,14 +635,15 @@ function findMatchesOn(b) {
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 // 시작: 저장된 데이터 있으면 불러오기
-if (loadData()) {
-  updateUI();
-  render();
-  if (moves <= 0) {
-    document.getElementById('msg').textContent = `🏁 게임 종료! 새 게임을 시작하세요.`;
-  }
-} else {
-  newGame();
+loadData();
+updateUI();
+do {
+  board = Array.from({length: ROWS}, () =>
+    Array.from({length: COLS}, () => GEMS[Math.floor(Math.random()*GEMS.length)]));
+} while (findMatches().length > 0);
+render();
+if (moves <= 0) {
+  document.getElementById('msg').textContent = `🏁 게임 종료! 새 게임을 시작하세요.`;
 }
 </script>
 </body>
