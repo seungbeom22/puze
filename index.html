@@ -250,8 +250,9 @@
   <div class="info-item">점수: <span id="score">0</span></div>
   <div class="info-item">🏆 <span id="best">0</span></div>
   <div class="info-item">🪙 <span id="coins">0</span></div>
-  <div class="info-item">이동: <span id="moves">30</span></div>
+  <div class="info-item" id="movesItem">이동: <span id="moves">30</span></div>
   <div class="info-item">💡 <span id="hints">3</span></div>
+  <div class="info-item" id="modeLabel" style="color:#a78bfa;font-size:clamp(0.7rem,2.5vw,0.85rem);">📌 제한 모드</div>
 </div>
 
 <div id="board-wrap">
@@ -264,6 +265,7 @@
   <button onclick="newGame()">새 게임</button>
   <button onclick="showHint()">💡 힌트</button>
   <button onclick="openShop()">🛒 상점</button>
+  <button id="modeBtn" onclick="toggleMode()">♾️ 무한 모드</button>
 </div>
 
 <!-- 상점 모달 -->
@@ -346,11 +348,12 @@ function playSound(file) {
   } catch(e) {}
 }
 const ROWS = 8, COLS = 8;
-let board = [], selected = null, score = 0, moves = 30, hints = 3, coins = 0, bestScore = 0, busy = false;
+let board = [], selected = null, score = 0, moves = 30, hints = 3, coins = 0, bestScore = 0, bestScoreInfinite = 0, busy = false;
+let infiniteMode = false;
 
 // 저장/불러오기
 function saveData() {
-  localStorage.setItem('gemMatch', JSON.stringify({ score, coins, hints, moves, bestScore }));
+  localStorage.setItem('gemMatch', JSON.stringify({ score, coins, hints, moves, bestScore, bestScoreInfinite, infiniteMode }));
 }
 
 function loadData() {
@@ -363,16 +366,22 @@ function loadData() {
     hints = s.hints ?? 3;
     moves = s.moves ?? 30;
     bestScore = s.bestScore || 0;
+    bestScoreInfinite = s.bestScoreInfinite || 0;
+    infiniteMode = s.infiniteMode || false;
     return true;
   } catch { return false; }
 }
 
 function updateUI() {
   document.getElementById('score').textContent = score;
-  document.getElementById('best').textContent = bestScore;
+  document.getElementById('best').textContent = infiniteMode ? bestScoreInfinite : bestScore;
   document.getElementById('coins').textContent = coins;
   document.getElementById('moves').textContent = moves;
   document.getElementById('hints').textContent = hints;
+  document.getElementById('movesItem').style.display = infiniteMode ? 'none' : 'flex';
+  document.getElementById('modeLabel').textContent = infiniteMode ? '♾️ 무한 모드' : '📌 제한 모드';
+  const modeBtn = document.getElementById('modeBtn');
+  if (modeBtn) modeBtn.textContent = infiniteMode ? '📌 제한 모드로' : '♾️ 무한 모드로';
 }
 
 function newGame() {
@@ -385,6 +394,11 @@ function newGame() {
   updateUI();
   saveData();
   render();
+}
+
+function toggleMode() {
+  infiniteMode = !infiniteMode;
+  newGame();
 }
 
 function render() {
@@ -408,7 +422,8 @@ function getCell(r, c) {
 
 function onCellClick(r, c) {
   unlockAudio();
-  if (busy || moves <= 0) return;
+  if (busy) return;
+  if (!infiniteMode && moves <= 0) return;
   if (selected === null) {
     selected = {r, c};
     getCell(r,c).classList.add('selected');
@@ -436,12 +451,12 @@ async function doSwap(r1,c1,r2,c2) {
     setTimeout(() => document.getElementById('msg').textContent = '', 800);
     busy = false; return;
   }
-  moves--;
+  if (!infiniteMode) moves--;
   updateUI();
   await resolveMatches();
   saveData();
   busy = false;
-  if (moves <= 0) {
+  if (!infiniteMode && moves <= 0) {
     if (score > bestScore) bestScore = score;
     saveData();
     document.getElementById('msg').textContent = `🏁 게임 종료! 최종 점수: ${score}`;
@@ -466,7 +481,11 @@ async function resolveMatches() {
       showCombo(comboCount);
     }
     coins += gained;
-    if (score > bestScore) bestScore = score;
+    if (infiniteMode) {
+      if (score > bestScoreInfinite) bestScoreInfinite = score;
+    } else {
+      if (score > bestScore) bestScore = score;
+    }
     updateUI();
     await animateMatches(matches);
     removeMatches(matches);
@@ -584,7 +603,11 @@ function buyItem(type) {
     }
     coins -= 80;
     score += 200;
-    if (score > bestScore) bestScore = score;
+    if (infiniteMode) {
+      if (score > bestScoreInfinite) bestScoreInfinite = score;
+    } else {
+      if (score > bestScore) bestScore = score;
+    }
     // 판 초기화 (점수/코인 유지)
     let newBoard;
     do {
@@ -642,7 +665,7 @@ do {
     Array.from({length: COLS}, () => GEMS[Math.floor(Math.random()*GEMS.length)]));
 } while (findMatches().length > 0);
 render();
-if (moves <= 0) {
+if (!infiniteMode && moves <= 0) {
   document.getElementById('msg').textContent = `🏁 게임 종료! 새 게임을 시작하세요.`;
 }
 </script>
